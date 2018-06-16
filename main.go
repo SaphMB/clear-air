@@ -1,23 +1,17 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"net/http"
 	"os"
 
 	"github.com/SaphMB/clear-air/airqualityclient"
+	"github.com/SaphMB/clear-air/api"
 )
 
 func main() {
-	http.HandleFunc("/", handleHome)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+
+	go api.Start()
 
 	apiToken := os.Getenv("WORLD_AIR_QUALITY_API_TOKEN")
 	client := &airqualityclient.AirQualityClient{APIToken: apiToken}
 	client.Validate()
-}
-
-func handleHome(w http.ResponseWriter, req *http.Request) {
-	fmt.Fprintf(w, "Listening on %s 🎶", req.Host)
 }
