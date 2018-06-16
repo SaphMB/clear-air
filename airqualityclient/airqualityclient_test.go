@@ -16,9 +16,19 @@ var _ = Describe("Air Quality Client", func() {
 		client := &airqualityclient.AirQualityClient{APIToken: apiToken}
 
 		It("validates the client", func() {
-			status, err := client.Validate()
-			Expect(err).ToNot(HaveOccurred())
+			status := client.Validate()
 			Expect(status).To(Equal("ok"))
+		})
+	})
+
+	Context("When an incorrect api token is provided", func() {
+
+		apiToken := "incorrecttoken"
+		client := &airqualityclient.AirQualityClient{APIToken: apiToken}
+
+		It("raises an error stating that the incorrect token hase been used", func() {
+			status := client.Validate()
+			Expect(status).To(Equal("Error: Invalid key"))
 		})
 	})
 })

@@ -2,6 +2,7 @@ package airqualityclient
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -11,10 +12,13 @@ type AirQualityClient struct {
 	APIToken string
 }
 
+type Status struct {
+	Status string `json:"status"`
+}
+
 type CityFeed struct {
-	Status  string `json:"status"`
-	Data    CityData
-	Message string
+	Status string
+	Data   interface{}
 }
 
 type CityData struct {
@@ -35,7 +39,7 @@ type Iaqi struct {
 	}
 }
 
-func (a AirQualityClient) Validate() (string, error) {
+func (a AirQualityClient) Validate() string {
 	token := a.APIToken
 	resp, err := http.Get("http://api.waqi.info/feed/@5724/?token=" + token)
 
@@ -43,12 +47,12 @@ func (a AirQualityClient) Validate() (string, error) {
 		log.Fatalf("Error: %s", err)
 	}
 
-	status, statusErr := a.statusCheck(resp)
+	status := a.statusCheck(resp)
 
-	return status, statusErr
+	return status
 }
 
-func (a AirQualityClient) statusCheck(responseBody *http.Response) (string, error) {
+func (a AirQualityClient) statusCheck(responseBody *http.Response) string {
 
 	body, readErr := ioutil.ReadAll(responseBody.Body)
 	if readErr != nil {
@@ -56,15 +60,21 @@ func (a AirQualityClient) statusCheck(responseBody *http.Response) (string, erro
 	}
 	defer responseBody.Body.Close()
 
-	feed := &CityFeed{}
-	unmarshallErr := json.Unmarshal(body, feed)
+	cityFeed := &CityFeed{}
+	unmarshallErr := json.Unmarshal(body, cityFeed)
 	if unmarshallErr != nil {
 		log.Fatalf("Error unmarshalling response: %s", unmarshallErr)
 	}
-	status := feed.Status
-	if status == "error" {
-		log.Fatalf("Error: %s", feed.Message)
+
+	var status string
+
+	switch cityFeed.Status {
+	case "error":
+		errorMessage := fmt.Sprintf("Error: %s", cityFeed.Data)
+		status = errorMessage
+	case "ok":
+		status = "ok"
 	}
 
-	return status, unmarshallErr
+	return status
 }
